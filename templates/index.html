@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Assistant</title>
+  <style>
+    body {
+      background-color: black;
+      color: aliceblue;
+    }
+
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 15vh;
+      border-radius: 110px;
+      background-color: rgb(0, 0, 0);
+    }
+
+    .chats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30vh;
+      margin: 50px auto;
+      border-radius: 110px;
+      background-color: black;
+      flex-direction: column;
+    }
+
+    hr {
+      width: 100%;
+      display: flex;
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+    }
+
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .text-input-wrapper {
+      position: relative;
+    }
+
+    #textInput {
+      width: 100%;
+      min-height: 50px;
+      max-height: 150px;
+      resize: vertical;
+      padding: 10px;
+      padding-right: 40px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .container{
+      color: aliceblue;
+    }
+
+    .attach-icon {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    #imageInput {
+      display: none;
+    }
+
+    .file-name {
+      margin-top: 5px;
+      font-size: 0.8em;
+    }
+
+    #submitInput {
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #submitInput:hover {
+      background-color: #218838;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Void</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item active">
+          <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Features</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Pricing</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" href="#">Disabled</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="p-3 mb-2">
+    <h1 class="text-center mx-2">This is Void-Ai</h1>
+    <div class="container">
+      <img src="af7b6ee82ae6de2df640d6d40c8fe8a4.gif" width="125" alt="siri">
+    </div>
+    <div class="container">
+      <button id="start" type="button" class="btn btn-light mx-2">Hear</button>
+      <button id="mute" type="button" class="btn btn-dark mx-2">Mute</button>
+    </div>
+    <!-- Combined Input Area -->
+    <div class="input-container mt-4">
+      <div class="text-input-wrapper">
+        <textarea id="textInput" class="form-control" placeholder="Type your query here..." rows="1"></textarea>
+        <label for="imageInput" class="attach-icon">📎</label>
+        <input type="file" id="imageInput" accept="image/*">
+      </div>
+      <div class="file-name" id="fileName"></div>
+      <button id="submitInput" type="button" class="btn btn-success">Submit</button>
+    </div>
+    <div class="container chats">
+      <div>Ask: This is what you require</div>
+      <div>Provided: This is your solution
+        <hr>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&#169; Copyright 2023 Dec, All rights reserved by Yohan.</p>
+  </footer>
+
+  <script>
+    // Function to send data to the server
+    async function postData(url = "", data = {}, isFormData = false) {
+      try {
+        const options = {
+          method: "POST",
+          headers: isFormData ? {} : { "Content-Type": "application/json" },
+          body: isFormData ? data : JSON.stringify(data),
+        };
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to connect to the server. Please try again later.');
+        return { message: 'Error connecting to the server.' };
+      }
+    }
+
+    // Function to update the chat with the AI response
+    const updateChat = (input, response) => {
+      document.querySelector(".chats").innerHTML += `
+        <div>Ask: ${input}</div>
+        <div>Provided: ${response}</div>
+        <hr>`;
+    };
+
+    let speech = true;
+    let globalTranscript;
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const recognition = new SpeechRecognition();
+    recognition.interimResults = true;
+
+    recognition.addEventListener('result', (e) => {
+      const transcript = Array.from(e.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+
+      globalTranscript = transcript;
+    });
+
+    // Start recognition on button click
+    document.getElementById('start').addEventListener("click", () => {
+      if (speech) {
+        recognition.start();
+        recognition.addEventListener('end', () => {
+          if (globalTranscript) {
+            const formData = new FormData();
+            formData.append('input', globalTranscript);
+            postData("/process-input", formData, true).then((data) => {
+              updateChat(globalTranscript, data.message);
+            });
+          }
+          globalTranscript = "";
+        });
+      }
+    });
+
+    // Mute button functionality
+    document.getElementById('mute').addEventListener("click", () => {
+      speech = !speech;
+      alert(speech ? 'Voice recognition enabled.' : 'Voice recognition disabled.');
+    });
+
+    // Auto-resize textarea
+    const textInput = document.getElementById('textInput');
+    textInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Display file name when selected
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+      document.getElementById('fileName').textContent = fileName;
+    });
+
+    // Handling combined text and image input submission
+    document.getElementById('submitInput').addEventListener('click', () => {
+      const inputText = document.getElementById('textInput').value.trim();
+      const imageInput = document.getElementById('imageInput');
+      
+      const formData = new FormData();
+      formData.append('input', inputText || "What's in this image?");
+      
+      if (imageInput.files.length > 0) {
+        formData.append('image', imageInput.files[0]);
+      }
+
+      postData("/process-input", formData, true).then((data) => {
+        updateChat(inputText || "Image Upload", data.message);
+      });
+
+      // Clear inputs
+      document.getElementById('textInput').value = '';
+      document.getElementById('textInput').style.height = 'auto';
+      imageInput.value = '';
+      document.getElementById('fileName').textContent = '';
+    });
+  </script>
+</body>
+
+</html>

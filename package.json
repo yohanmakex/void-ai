@@ -1,0 +1,21 @@
+{
+  "name": "flamboyantknowndesigner",
+  "version": "1.0.0",
+  "description": "Every new repl comes with a `.replit` and a `replit.nix` file that let you configure your repl to do just about anything in any language!",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.1.4",
+    "openai": "^4.59.0",
+    "punycode": "^2.3.1",
+    "whisper": "^0.3.3"
+  }
+}
